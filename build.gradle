@@ -16,7 +16,6 @@ loom {
 	mods {
 		"tradingmod" {
 			sourceSet sourceSets.main
-			sourceSet sourceSets.client
 		}
 	}
 }

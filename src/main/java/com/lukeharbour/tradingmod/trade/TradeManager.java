@@ -5,14 +5,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.server.level.ServerPlayer;
 
 public class TradeManager {
-	private final Map<Integer, TradeSession> sessionsById = new HashMap<>();
 	private final Map<UUID, TradeSession> sessionsByPlayer = new HashMap<>();
 	private final Map<UUID, UUID> requests = new HashMap<>();
 	private int nextSessionId = 1;
@@ -23,6 +24,18 @@ public class TradeManager {
 						.executes(context -> {
 							ServerPlayer player = context.getSource().getPlayerOrException();
 							cancel(player);
+							return 1;
+						}))
+				.then(Commands.literal("confirm")
+						.executes(context -> {
+							ServerPlayer player = context.getSource().getPlayerOrException();
+							confirm(player, true);
+							return 1;
+						}))
+				.then(Commands.literal("unconfirm")
+						.executes(context -> {
+							ServerPlayer player = context.getSource().getPlayerOrException();
+							confirm(player, false);
 							return 1;
 						}))
 				.then(Commands.argument("player", EntityArgument.player())
@@ -61,19 +74,22 @@ public class TradeManager {
 		}
 
 		requests.put(requesterId, targetId);
-		requester.sendSystemMessage(Component.literal("Trade request sent to " + target.getGameProfile().name() + "."));
-		target.sendSystemMessage(Component.literal(requester.getGameProfile().name() + " wants to trade. Run /trade "
-				+ requester.getGameProfile().name() + " to open the trade."));
+		requester.sendSystemMessage(Component.literal("Trade Request Sent to " + target.getGameProfile().name() + "."));
+		target.sendSystemMessage(tradeRequestMessage(requester));
 	}
 
-	public void confirm(ServerPlayer player, int sessionId, boolean confirmed) {
-		TradeSession session = sessionsById.get(sessionId);
+	public void confirm(ServerPlayer player, boolean confirmed) {
+		TradeSession session = sessionsByPlayer.get(player.getUUID());
 
-		if (session == null || sessionsByPlayer.get(player.getUUID()) != session) {
+		if (session == null) {
+			player.sendSystemMessage(Component.literal("You are not in an active trade."));
 			return;
 		}
 
 		session.setConfirmed(player, confirmed);
+		if (session.state() == TradeSession.STATE_ACTIVE) {
+			player.sendSystemMessage(Component.literal(confirmed ? "Trade confirmed." : "Trade confirmation removed."));
+		}
 	}
 
 	public void cancel(ServerPlayer player) {
@@ -105,8 +121,6 @@ public class TradeManager {
 	}
 
 	void remove(TradeSession session) {
-		sessionsById.remove(session.id());
-
 		Iterator<Map.Entry<UUID, TradeSession>> iterator = sessionsByPlayer.entrySet().iterator();
 		while (iterator.hasNext()) {
 			if (iterator.next().getValue() == session) {
@@ -117,7 +131,6 @@ public class TradeManager {
 
 	private void startSession(ServerPlayer first, ServerPlayer second) {
 		TradeSession session = new TradeSession(this, nextSessionId++, first, second);
-		sessionsById.put(session.id(), session);
 		sessionsByPlayer.put(first.getUUID(), session);
 		sessionsByPlayer.put(second.getUUID(), session);
 
@@ -128,5 +141,15 @@ public class TradeManager {
 
 	private void removeRequestsTargeting(UUID targetId) {
 		requests.entrySet().removeIf(entry -> entry.getValue().equals(targetId));
+	}
+
+	private Component tradeRequestMessage(ServerPlayer requester) {
+		String requesterName = requester.getGameProfile().name();
+		return Component.literal("Trade Request Received from " + requesterName + ". ")
+				.append(Component.literal("CLICK HERE TO ACCEPT")
+						.withStyle(style -> style
+								.withColor(ChatFormatting.GREEN)
+								.withUnderlined(true)
+								.withClickEvent(new ClickEvent.RunCommand("/trade " + requesterName))));
 	}
 }

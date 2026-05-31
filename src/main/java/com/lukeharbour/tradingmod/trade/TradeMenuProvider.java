@@ -1,27 +1,24 @@
 package com.lukeharbour.tradingmod.trade;
 
-import net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
-class TradeMenuProvider implements ExtendedMenuProvider<TradeMenuData> {
+class TradeMenuProvider implements MenuProvider {
 	private final TradeSession session;
+	private final Component title;
 
-	TradeMenuProvider(TradeSession session) {
+	TradeMenuProvider(TradeSession session, ServerPlayer viewer) {
 		this.session = session;
-	}
-
-	@Override
-	public TradeMenuData getScreenOpeningData(ServerPlayer player) {
-		return new TradeMenuData(session.id(), session.partnerName(player));
+		this.title = Component.literal("Trade with " + session.partnerName(viewer));
 	}
 
 	@Override
 	public Component getDisplayName() {
-		return Component.literal("Secure Trade");
+		return title;
 	}
 
 	@Override

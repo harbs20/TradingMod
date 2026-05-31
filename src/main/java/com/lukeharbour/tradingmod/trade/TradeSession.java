@@ -45,18 +45,18 @@ class TradeSession {
 	}
 
 	boolean open() {
-		if (first.openMenu(new TradeMenuProvider(this)).isEmpty()) {
+		if (first.openMenu(new TradeMenuProvider(this, first)).isEmpty()) {
 			cancel(Component.literal("Could not open the trade for " + first.getGameProfile().name() + "."));
 			return false;
 		}
 
-		if (second.openMenu(new TradeMenuProvider(this)).isEmpty()) {
+		if (second.openMenu(new TradeMenuProvider(this, second)).isEmpty()) {
 			cancel(Component.literal("Could not open the trade for " + second.getGameProfile().name() + "."));
 			return false;
 		}
 
-		first.sendSystemMessage(Component.literal("Trade opened with " + second.getGameProfile().name() + "."));
-		second.sendSystemMessage(Component.literal("Trade opened with " + first.getGameProfile().name() + "."));
+		first.sendSystemMessage(Component.literal("Trade Request Accepted with " + second.getGameProfile().name() + "."));
+		second.sendSystemMessage(Component.literal("Trade Request Accepted with " + first.getGameProfile().name() + "."));
 		return true;
 	}
 

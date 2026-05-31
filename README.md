@@ -1,14 +1,14 @@
 # TradingMod
 
-TradingMod is a Fabric mod that adds a secure two-player item trading GUI for Minecraft SMPs. Instead of dropping items on the ground and trusting the other player to follow through, both players place their offers into a shared trade screen and the server only swaps the items after both sides confirm.
+TradingMod is a server-side Fabric mod that adds secure two-player item trading for Minecraft SMPs. Instead of dropping items on the ground and trusting the other player to follow through, both players place their offers into a vanilla chest-style trade menu and the server only swaps the items after both sides confirm.
 
 ## Features
 
 - Two-player `/trade` command flow for sending and accepting trade requests.
-- Dedicated trade screen with "Their Offer" and "Your Offer" sections.
+- Vanilla chest-style trade menu, so players do not need the mod installed locally.
 - 12 offer slots per player, arranged as a 4 by 3 grid.
 - Read-only view of the other player's offer.
-- Confirmation button that locks your own offer while confirmed.
+- Clickable confirm/cancel items that lock your own offer while confirmed.
 - Automatic confirmation reset whenever either offer changes.
 - Server-side completion check that verifies each player has room for the incoming items.
 - Safe cancellation when either player closes the menu, runs `/trade cancel`, or disconnects.
@@ -25,17 +25,19 @@ TradingMod currently targets the Fabric toolchain used by Minecraft 26.1.x.
 | Fabric API | 0.149.1+26.1.2 |
 | Java | 25 or newer |
 
-Both the server and participating clients should have the mod installed. The server owns the trade session and item transfer logic, while the client provides the custom trade screen.
+Only the server needs TradingMod installed. Players can join with an unmodded vanilla/Fabric client because trades use a vanilla chest menu type.
 
 Supporting older Fabric or Minecraft versions should be done with separate branches/builds, because the 26.1 toolchain uses newer mappings and a newer Java baseline than many older releases.
 
 ## Installation
 
-1. Install Minecraft with Fabric Loader.
-2. Install Fabric API for the same Minecraft version.
+1. Install a Fabric server for the matching Minecraft version.
+2. Install Fabric API in the server's `mods` folder.
 3. Download or build the TradingMod jar.
-4. Place the TradingMod jar in the `mods` folder on the server and on each participating client.
-5. Start the game/server and verify that the mod loads without Fabric dependency errors.
+4. Place the TradingMod jar in the server's `mods` folder.
+5. Start the server and verify that the mod loads without Fabric dependency errors.
+
+Clients do not need to install TradingMod.
 
 ## Usage
 
@@ -63,7 +65,17 @@ The target player accepts by sending a matching request back:
 /trade <requester>
 ```
 
-Once both players have requested each other, the trade screen opens for both players.
+Once both players have requested each other, a vanilla chest-style trade menu opens for both players.
+
+### Confirming
+
+Click `Click to Confirm` in the bottom-right of the trade menu, or run:
+
+```mcfunction
+/trade confirm
+```
+
+Run `/trade unconfirm` or click `Click to Unconfirm` to unlock your offer before changing it.
 
 ### Cancelling
 
@@ -75,16 +87,16 @@ Run:
 
 This cancels your pending outgoing request or your active trade. If you are in an active trade, all offered items are returned to their original owners.
 
-Closing the trade screen also cancels the active trade.
+Closing the trade menu also cancels the active trade.
 
 ## How Trades Work
 
 1. Player A runs `/trade <player-b>`.
 2. Player B runs `/trade <player-a>` to accept.
-3. TradingMod opens a secure trade screen for both players.
+3. TradingMod opens a vanilla chest-style trade menu for both players.
 4. Each player can place items only in their own offer slots.
 5. The other player's offer slots are visible but read-only.
-6. When a player clicks `Confirm`, their own offer becomes locked.
+6. When a player clicks `Click to Confirm`, their own offer becomes locked.
 7. If either player changes their offer, both confirmations are cleared.
 8. When both players are confirmed, the server checks whether each player can receive the other offer.
 9. If both inventories have enough room, the server swaps the items and closes the trade.
@@ -107,23 +119,19 @@ TradingMod is designed so item movement is controlled by the server:
 | Command | Description |
 | --- | --- |
 | `/trade <player>` | Send a trade request, or accept if that player has already requested you. |
+| `/trade confirm` | Confirm your current active trade offer. |
+| `/trade unconfirm` | Remove your confirmation so you can edit your offer. |
 | `/trade cancel` | Cancel your pending request or active trade. |
 
 ## Project Layout
 
 ```text
 src/main/java/com/lukeharbour/tradingmod/
-  TradingMod.java                         Main mod initializer, menu registration, networking, commands
-  network/ConfirmTradePayload.java        Client-to-server confirm/unconfirm packet
+  TradingMod.java                         Main mod initializer, commands, disconnect cleanup
   trade/TradeManager.java                 Trade requests, active sessions, cancellation, disconnect cleanup
   trade/TradeSession.java                 Offer containers, confirmations, completion, item transfer
-  trade/TradeMenu.java                    Server/client container menu and slot rules
-  trade/TradeMenuData.java                Data sent when opening the trade screen
-  trade/TradeMenuProvider.java            Server-side screen provider
-
-src/client/java/com/lukeharbour/tradingmod/
-  client/TradingModClient.java            Client initializer and screen registration
-  client/screen/TradeScreen.java          Custom trade GUI rendering and confirm button
+  trade/TradeMenu.java                    Server-side vanilla chest menu and slot rules
+  trade/TradeMenuProvider.java            Server-side menu provider
 
 src/main/resources/
   fabric.mod.json                         Fabric metadata and dependency declarations
@@ -150,7 +158,7 @@ Build outputs are written to `build/libs/`. The main mod jar uses the archive ba
 ./gradlew build
 ```
 
-Use `runClient` for local client testing and `runServer` for dedicated-server behavior. The generated local run directory is ignored by git.
+Use `runServer` for dedicated-server behavior. `runClient` will not load this server-only mod, but it can launch a local client for connecting to a test server. The generated local run directory is ignored by git.
 
 ### Version Settings
 
@@ -180,17 +188,17 @@ Update these values together when moving the mod to a new Minecraft/Fabric versi
 
 Check that Minecraft, Fabric Loader, Fabric API, and Java match the versions listed above. A Java version mismatch is especially likely if the game starts with class version errors.
 
-### The trade screen does not open
+### The trade menu does not open
 
 Make sure both players have accepted the request by running `/trade <other-player>`. Also verify that neither player is already in another active trade.
 
 ### A trade will not complete
 
-Both players must press `Confirm`, and each player must have enough inventory room for the other player's offer. If a player lacks space, the trade remains open and both confirmations are reset.
+Both players must click `Click to Confirm` or run `/trade confirm`, and each player must have enough inventory room for the other player's offer. If a player lacks space, the trade remains open and both confirmations are reset.
 
-### Items return when the screen closes
+### Items return when the menu closes
 
-That is expected. Closing the trade screen cancels the trade so players do not accidentally leave items locked in an unfinished session.
+That is expected. Closing the trade menu cancels the trade so players do not accidentally leave items locked in an unfinished session.
 
 ## License
 
