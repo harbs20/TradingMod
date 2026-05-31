@@ -1,0 +1,15 @@
+name: TradingMod
+version: '${version}'
+main: com.lukeharbour.tradingmod.TradingPlugin
+description: A safe two-player item trading GUI for Paper and Bukkit servers.
+author: Luke Harbour
+api-version: '${apiVersion}'
+commands:
+  trade:
+    description: Send, accept, confirm, unconfirm, or cancel trade requests.
+    usage: /trade <player|confirm|unconfirm|cancel>
+    permission: tradingmod.trade
+permissions:
+  tradingmod.trade:
+    description: Allows players to use the trading command.
+    default: true

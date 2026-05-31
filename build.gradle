@@ -1,41 +1,40 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'java'
 	id 'maven-publish'
 }
 
-version = project.mod_version
+version = project.plugin_version
 group = project.maven_group
 
 base {
 	archivesName = project.archives_base_name
 }
 
-loom {
-	splitEnvironmentSourceSets()
-
-	mods {
-		"tradingmod" {
-			sourceSet sourceSets.main
-		}
+repositories {
+	mavenCentral()
+	maven {
+		name = 'papermc'
+		url = uri('https://repo.papermc.io/repository/maven-public/')
 	}
 }
 
 dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	compileOnly "io.papermc.paper:paper-api:${project.paper_api_version}"
 }
 
 processResources {
-	def modVersion = project.version
-	inputs.property "version", modVersion
+	def pluginVersion = project.version
+	def apiVersion = project.minecraft_version
+	inputs.property 'version', pluginVersion
+	inputs.property 'apiVersion', apiVersion
 
-	filesMatching("fabric.mod.json") {
-		expand "version": modVersion
+	filesMatching('plugin.yml') {
+		expand 'version': pluginVersion, 'apiVersion': apiVersion
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = 'UTF-8'
 	it.options.release = 25
 }
 
@@ -47,7 +46,7 @@ java {
 
 publishing {
 	publications {
-		create("mavenJava", MavenPublication) {
+		create('mavenJava', MavenPublication) {
 			from components.java
 		}
 	}
