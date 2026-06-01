@@ -21,15 +21,16 @@ This branch is the plugin version. The Fabric server-side mod remains on the `ma
 | Requirement | Version |
 | --- | --- |
 | Server | Paper, Bukkit, or compatible forks |
-| Minecraft API | Built against Paper API 26.1.2 |
-| Java | 25 or newer |
+| Minecraft API | Built against Paper API 1.20 |
+| Tested target range | 1.20.x, 1.21.x, and 26.x |
+| Java | 17 or newer |
 
 Players can join with vanilla clients.
 
 ## Installation
 
 1. Build the plugin jar with `./gradlew build`.
-2. Copy `build/libs/tradingmod-1.0.0.jar` into the server's `plugins` folder.
+2. Copy `build/libs/tradingmod-1.0.1.jar` into the server's `plugins` folder.
 3. Restart the server.
 4. Confirm that `TradingMod` appears in `/plugins`.
 
@@ -99,9 +100,9 @@ Build outputs are written to `build/libs/`.
 Important version values live in `gradle.properties`:
 
 ```properties
-minecraft_version=26.1.2
-paper_api_version=26.1.2.build.+
-plugin_version=1.0.0
+minecraft_version=1.20
+paper_api_version=1.20-R0.1-SNAPSHOT
+plugin_version=1.0.1
 ```
 
 ## Notes
